@@ -1,77 +1,38 @@
-set(sources
-    cameraparameters.cpp
-    cvdrawingutils.cpp
-    dictionary.cpp
-    ippe.cpp
-    marker.cpp
-    markerdetector.cpp
-    markerlabeler.cpp
-    markermap.cpp
-    posetracker.cpp
-    markerlabelers/dictionary_based.cpp
-    debug.cpp
-    markerlabelers/svmmarkers.cpp
+INCLUDE_DIRECTORIES(.)
+
+
+FILE(GLOB hdrs "*.h*")
+FILE(GLOB srcs "*.c*")
+
+
+
+
+SET(detectors_src   markerlabelers/dictionary_based.cpp   )# markerlabelers/svmmarkers.cpp )
+SET(detectors_hdr   markerlabelers/dictionary_based.h     )# markerlabelers/svmmarkers.h)
+
+SET(hdrs ${hdrs} ${detectors_hdr})
+SET(srcs ${srcs} ${detectors_src})
+
+SET(THIS_LIBNAME aruco)
+ADD_LIBRARY(${THIS_LIBNAME}  ${srcs} ${hdrs})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} )
+MESSAGE(STATUS "OpenCV_LIB_DIR=${OpenCV_LIB_DIR}")
+SET_TARGET_PROPERTIES(${THIS_LIBNAME} PROPERTIES 				# create *nix style library versions + symbolic links
+        DEFINE_SYMBOL ARUCO_DSO_EXPORTS
+	VERSION ${PROJECT_VERSION}
+	SOVERSION ${PROJECT_SOVERSION}
+	CLEAN_DIRECT_OUTPUT 1 					# allow creating static and shared libs without conflicts
+        OUTPUT_NAME "${THIS_LIBNAME}${PROJECT_DLLVERSION}" 	# avoid conflicts between library and binary target names
 )
 
-set(headers
-    aruco_export.h
-    cameraparameters.h
-    cvdrawingutils.h
-    dictionary.h
-    ippe.h
-    marker.h
-    markerdetector.h
-    markerlabeler.h
-    markermap.h
-    posetracker.h
-    markerlabelers/dictionary_based.h
-    timers.h
-     debug.h
-     aruco.h
-    markerlabelers/svmmarkers.h
-)
+TARGET_LINK_LIBRARIES(${THIS_LIBNAME} ${ARUCO_REQUIRED_LIBRARIES})
 
-add_library(aruco ${sources} ${headers})
-IF(NOT COMPILE_IN_ANDROID)
+INSTALL(TARGETS ${THIS_LIBNAME}
+	RUNTIME DESTINATION bin COMPONENT main			# Install the dll file in bin directory
+	LIBRARY DESTINATION lib PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE COMPONENT main
+	ARCHIVE DESTINATION lib COMPONENT main)			# Install the dll.a file in lib directory
 
-set_target_properties(aruco PROPERTIES          # create *nix style library versions + symbolic links
-    DEFINE_SYMBOL ARUCO_DSO_EXPORTS
-    VERSION ${PROJECT_VERSION}
-    SOVERSION ${PROJECT_SOVERSION}
-    CLEAN_DIRECT_OUTPUT 1                       # allow creating static and shared libs without conflicts
-    OUTPUT_NAME "aruco${PROJECT_DLLVERSION}"    # avoid conflicts between library and binary target names
-)
+INSTALL(FILES ${hdrs}
+        DESTINATION include/${THIS_LIBNAME}
+	COMPONENT main)
 
-#include(GenerateExportHeader)
-#generate_export_header(aruco)
-
-target_link_libraries(aruco PUBLIC opencv_core)
-target_link_libraries(aruco PRIVATE opencv_imgproc opencv_calib3d opencv_features2d opencv_ml)
-
-target_include_directories(aruco PUBLIC
-#  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-#  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:include>
-)
-
-install(TARGETS aruco EXPORT arucoConfig
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    ARCHIVE DESTINATION lib
-)
-
-install(FILES ${headers}
-    DESTINATION include/aruco
-)
-
-install(EXPORT arucoConfig DESTINATION "share/aruco/cmake")
-ELSE()
-MESSAGE(STATUS  "ARUCO COMPILATION")
-target_link_libraries( # Specifies the target library.
-                       aruco lib_opencv
-
-                       # Links the target library to the log library
-                       # included in the NDK.
-                       ${log-lib} )
-
-ENDIF()

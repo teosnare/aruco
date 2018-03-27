@@ -1,5 +1,5 @@
-/**
-Copyright 2017 Rafael Muñoz Salinas. All rights reserved.
+/*****************************
+Copyright 2011 Rafael Muñoz Salinas. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are
 permitted provided that the following conditions are met:
@@ -24,7 +24,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The views and conclusions contained in the software and documentation are those of the
 authors and should not be interpreted as representing official policies, either expressed
 or implied, of Rafael Muñoz Salinas.
-*/
+********************************/
 
 #include "svmmarkers.h"
 #include <iostream>
@@ -32,10 +32,10 @@ or implied, of Rafael Muñoz Salinas.
 #include <math.h>
 #include <string>
 #include <fstream>
-#include <opencv2/core.hpp>
+#include <opencv2/core/core.hpp>
 
-#include <opencv2/imgproc.hpp>
-#include <opencv2/ml.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/ml/ml.hpp>
 #include <iostream>
 
 using namespace std;
@@ -46,7 +46,7 @@ class SVMMarkers  {
     float _minFeatureValue, _maxFeatureValue; // image range for svm classification
     int _patchSize, _dictSize; // marker pathSize (total features = pathSize^2) and dictionary size (number of markers)
     bool _rotateMarkers; // interchange rotation 1 and 3 ??
-#if  CV_MAJOR_VERSION >= 3
+#if  CV_VERSION_MAJOR >= 3
     cv::Ptr<cv::ml::SVM>  _model;
 #else
     cv::Ptr<CvSVM>  _model  ;
@@ -64,11 +64,11 @@ public:
 
 
     int getBestInputSize(){return _patchSize;}
-    bool load(string path) {
+    bool load(string path)throw (cv::Exception){
     if (path.empty())return false;
 
 
-#if  CV_MAJOR_VERSION >= 3
+#if  CV_VERSION_MAJOR >= 3
     _model= cv::ml::StatModel::load<cv::ml::SVM>(path);
      _patchSize=sqrt(_model->getSupportVectors().size().width);
 
@@ -160,7 +160,7 @@ SVMMarkers::SVMMarkers(){
     _impl=new impl::SVMMarkers;
 }
 
-bool SVMMarkers::load(string path) {
+bool SVMMarkers::load(string path)throw (cv::Exception){
     return _impl->load(path);
 }
 
@@ -169,11 +169,7 @@ bool SVMMarkers::load(string path) {
  * Return marker id in 0 rotation, or -1 if not found
  * Assign the detected rotation of the marker to nRotation
  */
-bool SVMMarkers::detect(const cv::Mat &in, int &marker_id, int &nRotations, string &additionalInfo) {
-    bool res=_impl->detect(in,marker_id,nRotations);
-    if (res) additionalInfo="SVM";
-    return res;
-}
+bool SVMMarkers::detect(const cv::Mat &in, int &marker_id, int &nRotations) { return _impl->detect(in,marker_id,nRotations);}
 int SVMMarkers::getBestInputSize(){return _impl->getBestInputSize();}
 
 }
